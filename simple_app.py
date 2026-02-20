@@ -1,7 +1,6 @@
 """
-Simple Translation API
 FastAPI + Hugging Face Transformers
-English → 18+ Languages
+English → 18+ Languages (Target for Arabic but covered others as well)
 """
 
 from fastapi import FastAPI, HTTPException
