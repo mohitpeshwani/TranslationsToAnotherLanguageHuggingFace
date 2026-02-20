@@ -1,27 +1,21 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 WORKDIR /app
 
-# Set Python to unbuffered
 ENV PYTHONUNBUFFERED=1
+ENV HF_HOME=/app/.cache
 
-# Install only essential packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Minimal dependencies for Alpine
+RUN apk add --no-cache gcc musl-dev
 
-# Copy requirements and install
-COPY simple_requirements.txt .
-RUN pip install --no-cache-dir --compile -r simple_requirements.txt && \
+# Install with CPU-only torch + aggressive cleanup
+RUN pip install --no-cache-dir uvicorn fastapi transformers torch --index-url https://download.pytorch.org/whl/cpu && \
     find /usr/local -name "*.pyc" -delete && \
-    find /usr/local -name "__pycache__" -delete
+    find /usr/local -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    rm -rf /usr/local/lib/python*/site-packages/tests
 
-# Copy app only
 COPY simple_app.py app.py
 
-# Clean up
-RUN rm -rf /tmp/* /var/tmp/*
+EXPOSE 7860
 
-EXPOSE 8000
-
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]
